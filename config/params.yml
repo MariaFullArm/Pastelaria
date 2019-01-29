@@ -1,0 +1,5 @@
+params:
+    api_link: 'https://api.fullarm.com'
+    doc_link: 'https://pastelaria.com/doc/index.html'
+    app_id: pastelaria-app
+    app_secret: 

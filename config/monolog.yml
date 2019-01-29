@@ -1,0 +1,6 @@
+monolog:
+    monolog.name: Pastelaria
+    monolog.level: ERROR
+    monolog.logfile:  
+  
+  
