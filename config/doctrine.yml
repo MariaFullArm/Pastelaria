@@ -1,0 +1,23 @@
+doctrine:
+    options:
+      db.options: &DBOPTIONS
+        driver: pdo_mysql
+        host: 
+        port: 
+        user: 
+        password: 
+        dbname: 
+        charset: utf8
+    orm:
+      orm.auto_generate_proxies: true
+      orm.proxies_dir: "../data/DoctrineORM/Proxy"
+      orm.proxies_namespace: "EntityProxy"
+      orm.em.options:
+        mappings:
+          -
+            use_simple_annotation_reader: false
+            type: annotation
+            namespace: "Pastelaria\\Entity"
+            path: "./src/Pastelaria/Entity"
+
+  
