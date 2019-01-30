@@ -33,11 +33,9 @@ $config->setMigrationsTableName('migration_version');
 
 foreach ($commands as $command) {
 
-
     if ($command instanceof Command\AbstractCommand) {
         $command->setMigrationConfiguration($config);
     }
-
 
     $application->add($command);
 }

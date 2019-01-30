@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Venda
- * @ORM\Entity(repositoryClass="FullarmAdm\Repository\OperadoraRepository")
+ * @ORM\Entity(repositoryClass="Pastelaria\Repository\")
  * @ORM\Table(name="venda")
  */
 class Venda
@@ -45,11 +45,10 @@ class Venda
 
     /**
      * @var Vendedor
-     * @ORM\ManyToOne(targetEntity="Vendedor")
+     * @ORM\ManyToOne(targetEntity="vendedor")
      * @ORM\JoinColumn(name="id_vendedor",referencedColumnName="id", onDelete="CASCADE")
      */
     protected $vendedor;
-
 
 
     public function getId() {

@@ -5,7 +5,7 @@ namespace Pastelaria\Entity;
 use Doctrine\ORM\Mapping as ORM;
 /**
  * Produto
- * @ORM\Entity(repositoryClass="FullarmAdm\Repository\OperadoraRepository")
+ * @ORM\Entity(repositoryClass="Produto\Repository\")
  * @ORM\Table(name="produto")
  */
 class Produto

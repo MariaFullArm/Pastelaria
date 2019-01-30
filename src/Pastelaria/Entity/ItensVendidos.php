@@ -5,7 +5,7 @@ namespace Pastelaria\Entity;
 use Doctrine\ORM\Mapping as ORM;
 /**
  * ItensVendidos
- * @ORM\Entity(repositoryClass="FullarmAdm\Repository\OperadoraRepository")
+ * @ORM\Entity(repositoryClass="Pastelaria\Repository\")
  * @ORM\Table(name="itens_vendidos")
  */
 class ItensVendidos
@@ -28,14 +28,14 @@ class ItensVendidos
 
     /**
      * @var Produto
-     * @ORM\ManyToOne(targetEntity="Produto")
+     * @ORM\ManyToOne(targetEntity="produto")
      * @ORM\JoinColumn(name="id_produto",referencedColumnName="id", onDelete="CASCADE")
      */
     protected $produto;
 
     /**
      * @var Venda
-     * @ORM\ManyToOne(targetEntity="Venda")
+     * @ORM\ManyToOne(targetEntity="venda")
      * @ORM\JoinColumn(name="id_venda",referencedColumnName="id", onDelete="CASCADE")
      */
     protected $venda;
