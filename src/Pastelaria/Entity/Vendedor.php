@@ -5,7 +5,7 @@ namespace Pastelaria\Entity;
 use Doctrine\ORM\Mapping as ORM;
 /**
  * Vendedor
- * @ORM\Entity(repositoryClass="FullarmAdm\Repository\OperadoraRepository")
+ * @ORM\Entity(repositoryClass="Pastelaria\Repository\")
  * @ORM\Table(name="vendedor")
  */
 class Vendedor
@@ -27,8 +27,8 @@ class Vendedor
 
 
     /**
-     * @var integer
-     * @ORM\Column(type="integer", length=11)
+     * @var string
+     * @ORM\Column(type="string", length=15)
      */
     private $cpf;
 
