@@ -1,6 +1,6 @@
 <?php
 
-namespace Pastelaria\Services\Operadora\Form;
+namespace Pastelaria\Services\ItensVendidos\Form;
 
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\HttpFoundation\Response;
@@ -49,21 +49,21 @@ class FormItensVendidosService
         $formItensVendidos->setParserItensVendidos($parseItensVendidos);
         $formItensVendidos->setFormItensVendidosStorage($formItensVendidosStorage);
 
-        $operadora = $this->getNovoItensVendidos($data);
-        $operadoraInfo = $formItensVendidos->cadastrar($data, $operadora);
+        $itens_vendidos = $this->getNovoItensVendidos($data);
+        $itensVendidosInfo = $formItensVendidos->cadastrar($data, $itens_vendidos);
 
-        return $operadoraInfo;
+        return $itensVendidosInfo;
 
     }
 
     public function apagar( $data )
     {
-        $operadora       = $this->getItensVendidos($data);
-        $operadoraExiste = !is_null($operadora);
-        $operadoraInfo   = null;
+        $itens_vendidos       = $this->getItensVendidos($data);
+        $itensVendidosExiste  = !is_null($itens_vendidos);
+        $itensVendidosInfo    = null;
 
-        if (!$operadoraExiste){
-            $this->notificationError->addErro('operadora', Response::$statusTexts[Response::HTTP_NOT_FOUND]);
+        if (!$itensVendidosExiste){
+            $this->notificationError->addErro('itens_vendidos', Response::$statusTexts[Response::HTTP_NOT_FOUND]);
             $this->notificationError->setCodigoErro(Response::HTTP_NOT_FOUND);
         } else {
             $formItensVendidosStorage = new FormItensVendidosStorage($this->em);
@@ -71,10 +71,10 @@ class FormItensVendidosService
 
             $formItensVendidos = new RegraApagarItensVendidos($formItensVendidosStorage, $this->notificationError);
 
-            $operadoraInfo = $formItensVendidos->apagar($operadora);
+            $itensVendidosInfo = $formItensVendidos->apagar($itens_vendidos);
         }
 
-        return $operadoraInfo;
+        return $itensVendidosInfo;
 
     }
 
@@ -106,7 +106,7 @@ class FormItensVendidosService
             $itensVendidosInfo = $formItensVendidos->atualizar($data, $itens_vendidos);
 
         } else {
-            $this->notificationError->addErro('operadora', Response::$statusTexts[Response::HTTP_NOT_FOUND]);
+            $this->notificationError->addErro('itens_vendidos', Response::$statusTexts[Response::HTTP_NOT_FOUND]);
             $this->notificationError->setCodigoErro(Response::HTTP_NOT_FOUND);
         }
 
