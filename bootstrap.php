@@ -1,4 +1,5 @@
 <?php
+
 $loader = require __DIR__.'/vendor/autoload.php';
 \Doctrine\Common\Annotations\AnnotationRegistry::registerLoader(array($loader, 'loadClass'));
 
@@ -62,13 +63,13 @@ $app['Pastelaria.params'] = $configParams;
 $app['asset_path'] = '/assets';
 $app['lib_path']   = '/lib';
 
-$appCtrl = new Pastelaria\App();
+/*$appCtrl = new Pastelaria\App();
 $appCtrl->setAuthenticationService(new AuthenticationServiceApp());
 $app->mount('/', $appCtrl);
 
 $apiCtrl = new Pastelaria\Api();
 $apiCtrl->setAuthenticationService(new AuthenticationServiceApi());
-$app->mount('/api/v1', $apiCtrl);
+$app->mount('/api/v1', $apiCtrl);*/
 
 
 return $app;

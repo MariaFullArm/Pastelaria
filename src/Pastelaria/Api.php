@@ -19,7 +19,7 @@ class Api implements ControllerProviderInterface
     {
         $controllers = $app['controllers_factory'];
 
-        //Controller\Api\Login::addRoutes($controllers);
+        Controller\Api\ProdutosController::addRoutes($controllers);
         
         $controllers->match("{url}", function ($url) use ($app) {
             return new Response('', 204);

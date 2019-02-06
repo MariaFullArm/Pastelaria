@@ -21,7 +21,6 @@ class RegraApagarItensVendidos
     {
         $itensVendidosInfo = null;
 
-        $this->desindexar($itens_vendidos->getVenda()->getId(), $itens_vendidos->getId());
         $this->storage->remove($itens_vendidos);
 
         return $itensVendidosInfo;
