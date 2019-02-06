@@ -2,6 +2,7 @@
 
 namespace Pastelaria\Entity;
 
+use Doctrine\DBAL\Types\DecimalType;
 use Doctrine\ORM\Mapping as ORM;
 /**
  * Produto
@@ -32,8 +33,8 @@ class Produto
     private $descricao;
 
     /**
-     * @var float
-     * @ORM\Column(type="float")
+     * @var DecimalType
+     * @ORM\Column(type="decimal")
      */
     private $valor;
 

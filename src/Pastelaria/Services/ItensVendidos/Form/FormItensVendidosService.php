@@ -49,7 +49,7 @@ class FormItensVendidosService
         $formItensVendidos->setParserItensVendidos($parseItensVendidos);
         $formItensVendidos->setFormItensVendidosStorage($formItensVendidosStorage);
 
-        $itens_vendidos = $this->getNovoItensVendidos($data);
+        $itens_vendidos = $this->getEntidadeItensVendidos($data);
         $itensVendidosInfo = $formItensVendidos->cadastrar($data, $itens_vendidos);
 
         return $itensVendidosInfo;
@@ -152,7 +152,7 @@ class FormItensVendidosService
         return $itens_vendidos;
     }
 
-    protected function getNovoItensVendidos($data)
+    protected function getEntidadeItensVendidos($data)
     {
         $idVenda = $data['venda'];
 

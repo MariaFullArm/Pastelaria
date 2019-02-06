@@ -50,7 +50,7 @@ class FormProdutoService
         $formProduto->setParserProduto($parseProduto);
         $formProduto->setFormProdutoStorage($formProdutoStorage);
 
-        $produto = $this->getNovoProduto($data);
+        $produto = $this->getEntidadeProduto($data);
         $produtoInfo = $formProduto->cadastrar($data, $produto);
 
         return $produtoInfo;
@@ -153,17 +153,14 @@ class FormProdutoService
         return $produto;
     }
 
-    protected function getNovoProduto($data)
+    protected function getEntidadeProduto($data)
     {
-        $idVenda = $data['venda'];
+        $idProduto = $data['id'];
 
-        if($idVenda > 0){
-            $produto = new Produto();
-            $venda  = $this->em->getReference(Venda::class, $idVenda);
-            $produto->setVenda($venda);
-        }else{
-            $this->formNotificationError->addErro('venda', Response::$statusTexts[Response::HTTP_NOT_FOUND]);
-            $this->formNotificationError->setCodigoErro(Response::HTTP_NOT_FOUND);
+        $produto = new Produto();
+
+        if($idProduto > 0){
+            $produto  = $this->em->getReference(Produto::class, $idProduto);
         }
 
         return $produto;
