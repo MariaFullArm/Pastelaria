@@ -2,6 +2,7 @@
 
 namespace Pastelaria\Entity;
 
+use Doctrine\DBAL\Types\TextType;
 use Doctrine\ORM\Mapping as ORM;
 /**
  * Vendedor
@@ -28,7 +29,7 @@ class Vendedor
 
     /**
      * @var string
-     * @ORM\Column(type="string", length=15)
+     * @ORM\Column(type="string")
      */
     private $cpf;
 
