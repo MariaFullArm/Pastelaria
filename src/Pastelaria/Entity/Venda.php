@@ -29,7 +29,7 @@ class Venda
      * @var \DateTime
      * @ORM\Column(type="datetime")
      */
-    private $data;
+    private $data_venda;
 
     /**
      * @var string
@@ -58,8 +58,8 @@ class Venda
         return $this->total;
     }
 
-    public function getData(){
-        return $this->data;
+    public function getDataVenda(){
+        return $this->data_venda;
     }
 
     public function getObservacoes(){
@@ -84,8 +84,8 @@ class Venda
         $this->total = $total;
     }
 
-    public function setData($data) {
-        $this->data = $data;
+    public function setDataVenda($data_venda) {
+        $this->data_venda = $data_venda;
     }
 
     public function setObservacoes($observacoes) {
@@ -108,7 +108,7 @@ class Venda
         return [
             'id'          => $this->id,
             'total'       => $this->total,
-            'data'        => $this->data,
+            'data_venda'  => $this->data_venda,
             'observacoes' => $this->observacoes,
             'status'      => $this->status
         ];
