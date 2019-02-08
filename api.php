@@ -8,10 +8,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Respect\Validation\Validator as v;
 
 $app = new Silex\Application();
+$conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
 
-$app->get('/produto', function (){
+function createErrorMessage($msg){
+    return ["erro" => $msg];
+}
 
-   $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+//PRODUTO
+$app->get('/produto', function () use ($conexao){
 
    $merc = array();
    $resultado  = mysqli_query($conexao,"select * from produto ");
@@ -24,18 +28,18 @@ $app->get('/produto', function (){
        return new JsonResponse($merc,200);
   }
 
-   return new Response("Não há produto cadastrado!", 400);
+   return new JsonResponse(createErrorMessage("Não há produto cadastrado!"), 400);
 });
 
 
-$app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $request){
+$app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
 
    $produto = json_decode($request->getContent(),true);
 
 
    //Valida se json valido
    if($produto == NULL){
-       return new Response("Erro",400);
+       return new JsonResponse(createErrorMessage ("Erro"), 400);
    };
 
    //Valida Nome do produto
@@ -44,12 +48,12 @@ $app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $requ
    }
 
    if(empty($produto['nome'])){
-       return new Response("Nome não pode ser branco!",400);
+       return new JsonResponse(createErrorMessage("Nome não pode ser branco!"), 400);
    }
 
    //Valida o valor do produto
-   if(filter_var($produto['valor'], FILTER_VALIDATE_FLOAT) < 1 ){
-       return new Response("O valor não pode ser null!", 400);
+   if(filter_var($produto['valor'], FILTER_VALIDATE_FLOAT) <= 0 ){
+       return new JsonResponse(createErrorMessage("O valor não pode ser null!"), 400);
    }
 
    //Valida o tipo
@@ -58,7 +62,7 @@ $app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $requ
    }
 
    if(empty($produto['tipo'])){
-       return new Response("Tipo não pode ser branco!", 400);
+       return new JsonResponse(createErrorMessage("Tipo não pode ser branco!"), 400);
    }
 
    //Salva no banco
@@ -67,27 +71,30 @@ $app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $requ
    $tipo      = $produto['tipo'];
    $descricao = $produto['descricao'];
 
-   $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+    $query = "select nome from produto where nome = '{$nome}'";
+    $resultado = mysqli_query($conexao,$query);
 
-   $query = "Insert into  produto (nome,valor,tipo,descricao) values ('{$nome}',{$valor},'{$tipo}','{$descricao}')";
-   $resultado = mysqli_query($conexao,$query);
+   if ($resultado->num_rows > 0){
 
-   if (mysqli_num_rows($resultado) == 0){
-       return new Response("Não foi possivel realizar o cadastro!", 400);
+       return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
+
    }
 else {
+
+    $inserindo = "Insert into  produto (nome,valor,tipo,descricao) values ('{$nome}',{$valor},'{$tipo}','{$descricao}')";
+    $result = mysqli_query($conexao,$inserindo);
+
     return new JsonResponse($produto, 200);
+
 }
 });
 
+$app->put('/produto/{id}', function(Request $request,$id) use ($conexao){
 
-$app->put('/produto/{id}', function(Request $request,$id){
-
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
     $produto = json_decode($request->getContent(), true);
 
     if($produto == NULL){
-        return new Response("Erro",400);
+        return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
     if (is_string($produto['nome'])) {
@@ -95,11 +102,11 @@ $app->put('/produto/{id}', function(Request $request,$id){
     }
 
     if(empty($produto['nome'])){
-        return new Response("Nome não pode ser branco!",400);
+        return new JsonResponse(createErrorMessage("Nome não pode ser branco!"), 400);
     }
 
     if(filter_var($produto['valor'], FILTER_VALIDATE_FLOAT) < 1 ){
-        return new Response("O valor não pode ser null!", 400);
+        return new JsonResponse(createErrorMessage("O valor não pode ser null!"), 400);
     }
 
     if (is_string($produto['tipo'])) {
@@ -107,7 +114,7 @@ $app->put('/produto/{id}', function(Request $request,$id){
     }
 
     if(empty($produto['tipo'])){
-        return new Response("Tipo não pode ser branco!", 400);
+        return new JsonResponse(createErrorMessage("Tipo não pode ser branco!"), 400);
     }
 
     $nome      = $produto['nome'];
@@ -115,38 +122,43 @@ $app->put('/produto/{id}', function(Request $request,$id){
     $tipo      = $produto['tipo'];
     $descricao = $produto['descricao'];
 
-    $query = "update produto set nome = '{$nome}', valor = {$valor}, descricao = '{$descricao}', tipo = '{$tipo}' where id = {$id}";
+    $query = "select id from produto where id = {$id}";
+    $resultado = mysqli_query($conexao,$query);
 
-    $resultado  = mysqli_query($conexao,$query);
+    if ($resultado->num_rows == 0){
 
-    if ($resultado){
-        return new JsonResponse($produto,200);
+        return new JsonResponse(createErrorMessage("Não foi possível alterar o produto!"), 400);
     }
+    else {
+        $alterando = "update produto set nome = '{$nome}', valor = {$valor}, descricao = '{$descricao}', tipo = '{$tipo}' where id = {$id}";
+        $result = mysqli_query($conexao, $alterando);
 
-    return new Response("Não foi possível alterar o produto!", 400);
+        return new JsonResponse($produto, 200);
+    }
 })->assert('id','\d+');
 
 
-$app->delete('/produto/{id}', function ($id){
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+$app->delete('/produto/{id}', function ($id) use ($conexao){
 
-    $resultado = mysqli_query($conexao,"delete from produto where id = {$id}");
+    $resultado = mysqli_query($conexao,"select id from produto where id = {$id}");
 
-    if($resultado->rowCount() < 1) {
-        return new Response("Produto com id {$id} não encontrado para exclusão!", 404);
+    if($resultado->num_rows == 0) {
+        return new JsonResponse(createErrorMessage("Produto com id {$id} não encontrado para exclusão!"), 404);
     }
+    else {
+        $query = "delete from produto where id = {$id}";
+        $result = mysqli_query($conexao, $query);
 
-    return new Response("Produto excluído com sucesso!", 200);
+        return new JsonResponse(["aviso" => "Produto excluído com sucesso!"], 200);
+    }
 
 })->assert('id', '\d+');
 
 
 
 
-
-$app->get('/vendedor', function (){
-
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+//VENDEDOR
+$app->get('/vendedor', function () use ($conexao){
 
     $func = array();
     $resultado  = mysqli_query($conexao,"select * from vendedor ");
@@ -159,15 +171,15 @@ $app->get('/vendedor', function (){
         return new JsonResponse($func,200);
     }
 
-    return new Response("Não há vendedor cadastrado!", 400);
+    return new JsonResponse(createErrorMessage("Não há vendedor cadastrado!"), 400);
 });
 
-$app->post('/vendedor', function (\Symfony\Component\HttpFoundation\Request $request){
+$app->post('/vendedor', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
 
     $vendedor = json_decode($request->getContent(),true);
 
     if($vendedor == NULL){
-        return new JsonResponse("Erro",400);
+        return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
     if (is_string($vendedor['nome'])) {
@@ -175,40 +187,37 @@ $app->post('/vendedor', function (\Symfony\Component\HttpFoundation\Request $req
     }
 
     if(empty($vendedor['nome'])){
-        return new JsonResponse("Nome não pode ser branco!",400);
+        return new JsonResponse(createErrorMessage("Nome não pode ser branco!"), 400);
     }
 
-   /*if (v::cpf()->validate($vendedor['cpf'])){
-        $vendedor['cpf'] = ($vendedor['cpf']);
-    }
+    $cpfValidacao = v::cpf()->notEmpty()->validate($vendedor['cpf']);
 
-    if(empty($vendedor['cpf'])){
-        return new Response("Cpf não pode ser branco!", 400);
-    }*/
+    if (!$cpfValidacao){
+        return new JsonResponse(createErrorMessage("CPF Inválido ou nulo!"), 400);
+    }
 
     $nome      = $vendedor['nome'];
     $cpf       = $vendedor['cpf'];
 
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
-
-    $query = "Insert into  vendedor (nome,cpf) values ('{$nome}','{$cpf}')";
+    $query = "select cpf from vendedor where cpf='{$cpf}')";
     $resultado = mysqli_query($conexao,$query);
 
-    if ($resultado){
-        return new JsonResponse($vendedor,200);
+    if ($resultado->num_rows > 0){
+        return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
     }
+    $inserindo = "Insert into  vendedor (nome,cpf) values ('{$nome}','{$cpf}')";
+    $result = mysqli_query($conexao,$inserindo);
 
-    return new JsonResponse("Não foi possivel realizar o cadastro!", 400);
+    return new JsonResponse($vendedor,200);
 
 });
 
-$app->put('/vendedor/{id}', function(Request $request,$id){
+$app->put('/vendedor/{id}', function(Request $request,$id) use ($conexao){
 
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
     $vendedor = json_decode($request->getContent(), true);
 
     if($vendedor == NULL){
-        return new Response("Erro",400);
+        return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
     if (is_string($vendedor['nome'])) {
@@ -216,56 +225,54 @@ $app->put('/vendedor/{id}', function(Request $request,$id){
     }
 
     if(empty($vendedor['nome'])){
-        return new Response("Nome não pode ser branco!",400);
+        return new JsonResponse(createErrorMessage("Nome não pode ser branco!"), 400);
     }
 
-    /*if (v::cpf()->validate($vendedor['cpf'])){
-       $vendedor['cpf'] = ($vendedor['cpf']);
-   }
+    $cpfValidacao = v::cpf()->notEmpty()->validate($vendedor['cpf']);
 
-   if(empty($vendedor['cpf'])){
-       return new Response("Cpf não pode ser branco!", 400);
-   }*/
+    if (!$cpfValidacao){
+        return new JsonResponse(createErrorMessage("CPF Inválido ou nulo!"), 400);
+    }
 
     $nome      = $vendedor['nome'];
     $cpf       = $vendedor['cpf'];
 
-    $query = "update vendedor set nome = '{$nome}', cpf = '{$cpf}' where id = {$id}";
-
+    $query = "select id from vendedor where id = {$id}";
     $resultado  = mysqli_query($conexao,$query);
 
-    if ($resultado){
-        return new JsonResponse($vendedor,200);
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Não foi possível alterar o vendedor!"), 400);
     }
 
-    return new JsonResponse("Não foi possível alterar o vendedor!", 400);
+    $alterando = "update vendedor set nome = '{$nome}', cpf = '{$cpf}' where id = {$id}";
+    $result  = mysqli_query($conexao,$alterando);
+
+    return new JsonResponse($vendedor,200);
 
 })->assert('id','\d+');
 
 
-$app->delete('/vendedor/{id}', function ($id){
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+$app->delete('/vendedor/{id}', function ($id) use ($conexao){
 
-    $resultado = mysqli_query($conexao,"delete from vendedor where id = {$id}");
+    $resultado = mysqli_query($conexao,"select id from vendedor where id = {$id}");
 
-    $hello = "Não foi possivel excluir o vendedor!";
-    if (mysqli_num_rows($resultado)<1){
-        return new JsonResponse($hello, 400);
+    if($resultado->num_rows == 0) {
+        return new JsonResponse(createErrorMessage("Vendedor com id {$id} não encontrado para exclusão!"), 404);
     }
+    $result = mysqli_query($conexao,"delete from vendedor where id = {$id}");
 
-    return new JsonResponse("Vendedor excluído com sucesso!",200);
+    return new JsonResponse(["aviso" => "Vendedor excluído com sucesso!"], 200);
 
 })->assert('id', '\d+');
 
 
 
 
-$app->get('/venda', function (){
-
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+//VENDA
+$app->get('/venda', function () use ($conexao){
 
     $ven = array();
-    $resultado  = mysqli_query($conexao,"select * from venda as v2 inner join vendedor as v on v2.id_vendedor = v.id");
+    $resultado  = mysqli_query($conexao,"select * from venda");
 
     while ($venda = mysqli_fetch_assoc($resultado)){
         array_push($ven, $venda);
@@ -275,20 +282,59 @@ $app->get('/venda', function (){
         return new JsonResponse($ven,200);
     }
 
-    return new Response("Não há venda cadastrada!", 400);
+    return new JsonResponse(createErrorMessage("Não há venda cadastrada!"), 400);
 });
 
+$app->get('/venda/finalizada', function () use ($conexao){
+    $ven = array();
 
-$app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $request){
+    $resultado  = mysqli_query($conexao,"select * from venda where status = false");
+
+    while ($venda = mysqli_fetch_assoc($resultado)){
+        array_push($ven, $venda);
+    }
+
+    if ($resultado){
+        return new JsonResponse($ven,200);
+    }
+
+    return new JsonResponse(createErrorMessage("Não há vendas finalizadas!"), 400);
+});
+
+$app->get('/venda/pendente', function () use ($conexao){
+    $ven = array();
+
+    $resultado  = mysqli_query($conexao,"select * from venda where status = true");
+
+    while ($venda = mysqli_fetch_assoc($resultado)){
+        array_push($ven, $venda);
+    }
+
+    if ($resultado){
+        return new JsonResponse($ven,200);
+    }
+
+    return new JsonResponse(createErrorMessage("Não há vendas pendentes!"), 400);
+});
+
+$app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
 
     $venda = json_decode($request->getContent(),true);
 
     if($venda == NULL){
-        return new Response("Erro",400);
+        return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
-    if(filter_var($venda['total'], FILTER_VALIDATE_FLOAT) < 1 ){
-        return new Response("O total não pode ser null!", 400);
+    if(filter_var($venda['total'], FILTER_VALIDATE_FLOAT)  <= 0 ){
+        return new JsonResponse(createErrorMessage("O total não pode ser null!"), 400);
+    }
+
+    if (is_bool($venda['status'])) {
+        $venda['status'] = trim($venda['status']);
+    }
+
+    if(empty($venda['status'])){
+        return new JsonResponse(createErrorMessage("Status não pode ser branco!"), 400);
     }
 
     if (is_int($venda['data_venda'])) {
@@ -296,7 +342,7 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
     }
 
     if(empty($venda['data_venda'])){
-        return new Response("Data não pode ser branco!",400);
+        return new JsonResponse(createErrorMessage("Data não pode ser branco!"), 400);
     }
 
     $id_vendedor = $venda['id_vendedor'];
@@ -305,79 +351,81 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
     $status      = $venda['status'];
     $data_venda  = $venda['data_venda'];
 
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
 
-    $query = "Insert into venda (total,id_vendedor,observacoes,status,data_venda) values ({$total},{$id_vendedor}, '{$observacoes}',{$status},{$data_venda}) SELECT nome from vendedor as v join venda v2 ON v2.id_vendedor = v.id";
+    $query = "Insert into venda (total,id_vendedor,observacoes,status,data_venda) values ({$total},{$id_vendedor}, '{$observacoes}',{$status},{$data_venda})";
     $resultado = mysqli_query($conexao,$query);
-
-
-
-});
-
-$app->put('/venda/{id}', function(Request $request,$id){
-
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
-    $venda = json_decode($request->getContent(), true);
-
-    if($venda == NULL){
-        return new Response("Erro",400);
-    };
-
-    if(filter_var($venda['total'], FILTER_VALIDATE_FLOAT) < 1 ){
-        return new Response("O total não pode ser null!", 400);
-    }
-
-    if (is_int($venda['data_venda'])) {
-        $venda['data_venda'] = trim($venda['data_venda']);
-    }
-
-    if(empty($venda['data_venda'])){
-        return new Response("Data não pode ser branco!",400);
-    }
-
-    $id_vendedor = $venda['id_vendedor'];
-    $total       = $venda['total'];
-    $observacoes = $venda['observacoes'];
-    $status      = $venda['status'];
-    $data_venda  = $venda['data_venda'];
-
-    $query = "update venda set total = {$total},id_vendedor= {$id_vendedor}, observacoes = '{$observacoes}', status = {$status}, data_venda = {$data_venda} SELECT nome from vendedor as v join venda v2 ON v2.id_vendedor = v.id";
-
-    $resultado  = mysqli_query($conexao,$query);
 
     if ($resultado){
         return new JsonResponse($venda,200);
     }
 
-    return new Response("Não foi possível alterar a venda!", 400);
+    return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
 
+});
+
+$app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
+
+    $venda = json_decode($request->getContent(), true);
+
+    if($venda == NULL){
+        return new JsonResponse(createErrorMessage("Erro"), 400);
+    };
+
+    if(filter_var($venda['total'], FILTER_VALIDATE_FLOAT) < 1 ){
+        return new JsonResponse(createErrorMessage("O total não pode ser null!"), 400);
+    }
+
+    if (is_int($venda['data_venda'])) {
+        $venda['data_venda'] = trim($venda['data_venda']);
+    }
+
+    if(empty($venda['data_venda'])){
+        return new JsonResponse(createErrorMessage("Data não pode ser branco!"), 400);
+    }
+
+    $id_vendedor = $venda['id_vendedor'];
+    $total       = $venda['total'];
+    $observacoes = $venda['observacoes'];
+    $status      = $venda['status'];
+    $data_venda  = $venda['data_venda'];
+
+    $query = "select id from venda  where id = {$id}";
+    $resultado  = mysqli_query($conexao,$query);
+
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Não foi possível alterar a venda!"), 400);
+    }
+    else {
+        $alterando = "update venda set total = {$total},id_vendedor= {$id_vendedor}, observacoes = '{$observacoes}', status = {$status}, data_venda = {$data_venda}  where id = {$id}";
+        $result = mysqli_query($conexao, $alterando);
+
+        return new JsonResponse($venda, 200);
+    }
 })->assert('id','\d+');
 
 
-$app->delete('/venda/{id}', function ($id){
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+$app->delete('/venda/{id}', function ($id) use ($conexao){
 
-    $resultado = mysqli_query($conexao,"delete from venda where id = {$id}");
+    $resultado = mysqli_query($conexao,"select id from venda where id = {$id}");
 
-    if (mysqli_num_rows($resultado)>0){
-        return new Response("Não foi possivel excluir a venda!", 400);
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Venda com id {$id} não encontrada para exclusão!"), 404);
     }
-    return new Response("Venda apagada com sucesso!",200);
+    else {
+        $result = mysqli_query($conexao, "delete from venda where id = {$id}");
 
+        return new JsonResponse(["aviso" => "Venda excluída com sucesso!"], 200);
+    }
 })->assert('id', '\d+');
 
 
 
 
-
-
-
-$app->get('/itensvendidos', function (){
-
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+//ITENS VENDIDOS
+$app->get('/itensvendidos', function () use ($conexao){
 
     $itens = array();
-    $resultado  = mysqli_query($conexao,"select * from itens_vendidos as i inner join produto as p on i.produto = p.id");
+    $resultado  = mysqli_query($conexao,"select * from itens_vendidos");
 
     while ($itensvendidos = mysqli_fetch_assoc($resultado)){
         array_push($itens, $itensvendidos);
@@ -387,72 +435,74 @@ $app->get('/itensvendidos', function (){
         return new JsonResponse($itens,200);
     }
 
-    return new Response("Não há itens vendidos cadastrados!", 400);
+    return new JsonResponse(createErrorMessage("Não há itens vendidos cadastrados!"), 400);
 });
 
 
-$app->post('/itensvendidos', function (\Symfony\Component\HttpFoundation\Request $request){
+$app->post('/itensvendidos', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
 
     $itensvendidos = json_decode($request->getContent(),true);
 
     if($itensvendidos == NULL){
-        return new Response("Erro",400);
+        return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
     $id_produto  = $itensvendidos['id_produto'];
     $id_venda    = $itensvendidos['id_venda'];
     $quantidade  = $itensvendidos['quantidade'];
 
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
 
-    $query = "Insert into itens_vendidos (id_venda,id_produto,quantidade) values ({$id_venda},{$id_produto},{$quantidade}) SELECT id from venda as v join itens_vendidos i ON v.id_vendedor = i.id";
+    $query = "Insert into itens_vendidos (id_venda,id_produto,quantidade) values ({$id_venda},{$id_produto},{$quantidade})";
     $resultado = mysqli_query($conexao,$query);
 
     if ($resultado){
         return new JsonResponse($itensvendidos,200);
     }
 
-    return new Response("Não foi possivel realizar o cadastro!", 400);
+    return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
 
 });
 
-$app->put('/itensvendidos/{id}', function(Request $request,$id){
+$app->put('/itensvendidos/{id}', function(Request $request,$id) use ($conexao){
 
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
     $itensvendidos = json_decode($request->getContent(), true);
 
     if($itensvendidos == NULL){
-        return new Response("Erro",400);
+        return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
     $id_produto  = $itensvendidos['id_produto'];
     $id_venda    = $itensvendidos['id_venda'];
     $quantidade  = $itensvendidos['quantidade'];
 
-    $query = "update itens_vendidos set id_produto = {$id_produto},id_venda= {$id_venda}, quantidade = {$quantidade} SELECT id from venda as v join itens_vendidos i ON v.id_vendedor = i.id";
-
+    $query = "select id from itens_vendidos where id = {$id}";
     $resultado  = mysqli_query($conexao,$query);
 
-    if ($resultado){
-        return new JsonResponse($itensvendidos,200);
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Não foi possível alterar o item vendido!"), 400);
     }
+    else {
+        $alterando = "update itens_vendidos set id_produto = {$id_produto},id_venda= {$id_venda}, quantidade = {$quantidade} where id = {$id}";
+        $result = mysqli_query($conexao, $alterando);
 
-    return new Response("Não foi possível alterar o item vendido!", 400);
-
+        return new JsonResponse($itensvendidos, 200);
+    }
 })->assert('id','\d+');
 
 
-$app->delete('/itensvendidos/{id}', function ($id){
-    $conexao = mysqli_connect('localhost', 'root', '', 'pastelaria');
+$app->delete('/itensvendidos/{id}', function ($id) use ($conexao){
 
-    $resultado = mysqli_query($conexao,"delete from itens_vendidos where id = {$id}");
+    $resultado = mysqli_query($conexao,"select id from itens_vendidos where id = {$id}");
 
-    if (mysqli_num_rows($resultado)>0){
-        return new Response("Não foi possivel excluir o item vendido!", 400);
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Item vendido com id {$id} não encontrado para exclusão!"), 404);
     }
-    return new Response("Item vendido apagado com sucesso!",200);
 
+    else {
+        $result = mysqli_query($conexao, "delete from itens_vendidos where id = {$id}");
+
+        return new JsonResponse(["aviso" => "Item vendido excluído com sucesso!"], 200);
+    }
 })->assert('id', '\d+');
 
 $app->run();
-

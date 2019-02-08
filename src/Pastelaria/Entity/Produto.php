@@ -33,8 +33,8 @@ class Produto
     private $descricao;
 
     /**
-     * @var DecimalType
-     * @ORM\Column(type="decimal")
+     * @var float
+     * @ORM\Column(type="float")
      */
     private $valor;
 
