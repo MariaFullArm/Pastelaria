@@ -52,7 +52,7 @@ $app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $requ
    }
 
    //Valida o valor do produto
-   if(filter_var($produto['valor'], FILTER_VALIDATE_FLOAT) <= 0 ){
+   if(filter_var($produto['valor'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
        return new JsonResponse(createErrorMessage("O valor não pode ser null!"), 400);
    }
 
@@ -105,7 +105,7 @@ $app->put('/produto/{id}', function(Request $request,$id) use ($conexao){
         return new JsonResponse(createErrorMessage("Nome não pode ser branco!"), 400);
     }
 
-    if(filter_var($produto['valor'], FILTER_VALIDATE_FLOAT) < 1 ){
+    if(filter_var($produto['valor'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
         return new JsonResponse(createErrorMessage("O valor não pode ser null!"), 400);
     }
 
@@ -193,7 +193,7 @@ $app->post('/vendedor', function (\Symfony\Component\HttpFoundation\Request $req
     $cpfValidacao = v::cpf()->notEmpty()->validate($vendedor['cpf']);
 
     if (!$cpfValidacao){
-        return new JsonResponse(createErrorMessage("CPF Inválido ou nulo!"), 400);
+        return new JsonResponse(createErrorMessage("CPF Invalido"), 400);
     }
 
     $nome      = $vendedor['nome'];
@@ -281,8 +281,10 @@ $app->get('/venda', function () use ($conexao){
     if ($resultado){
         return new JsonResponse($ven,200);
     }
+    else {
 
-    return new JsonResponse(createErrorMessage("Não há venda cadastrada!"), 400);
+        return new JsonResponse(createErrorMessage("Não há venda cadastrada!"), 400);
+    }
 });
 
 $app->get('/venda/finalizada', function () use ($conexao){
@@ -297,8 +299,10 @@ $app->get('/venda/finalizada', function () use ($conexao){
     if ($resultado){
         return new JsonResponse($ven,200);
     }
+    else {
 
     return new JsonResponse(createErrorMessage("Não há vendas finalizadas!"), 400);
+}
 });
 
 $app->get('/venda/pendente', function () use ($conexao){
@@ -313,8 +317,10 @@ $app->get('/venda/pendente', function () use ($conexao){
     if ($resultado){
         return new JsonResponse($ven,200);
     }
+    else {
 
-    return new JsonResponse(createErrorMessage("Não há vendas pendentes!"), 400);
+        return new JsonResponse(createErrorMessage("Não há vendas pendentes!"), 400);
+    }
 });
 
 $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
@@ -325,7 +331,7 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
         return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
-    if(filter_var($venda['total'], FILTER_VALIDATE_FLOAT)  <= 0 ){
+    if(filter_var($venda['total'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
         return new JsonResponse(createErrorMessage("O total não pode ser null!"), 400);
     }
 
@@ -371,7 +377,7 @@ $app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
         return new JsonResponse(createErrorMessage("Erro"), 400);
     };
 
-    if(filter_var($venda['total'], FILTER_VALIDATE_FLOAT) < 1 ){
+    if(filter_var($venda['total'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
         return new JsonResponse(createErrorMessage("O total não pode ser null!"), 400);
     }
 

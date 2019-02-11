@@ -2,6 +2,7 @@
 
 namespace Pastelaria\Entity;
 
+use Doctrine\DBAL\Types\DecimalType;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -20,8 +21,8 @@ class Venda
     protected $id;
 
     /**
-     * @var integer
-     * @ORM\Column(type="integer")
+     * @var DecimalType
+     * @ORM\Column(type="decimal", precision=5, scale=2)
      */
     private $total;
 
