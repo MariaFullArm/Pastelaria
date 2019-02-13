@@ -31,7 +31,6 @@ $app->get('/produto', function () use ($conexao){
    return new JsonResponse(createErrorMessage("Não há produto cadastrado!"), 400);
 });
 
-
 $app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
 
    $produto = json_decode($request->getContent(),true);
@@ -76,7 +75,7 @@ $app->post('/produto', function (\Symfony\Component\HttpFoundation\Request $requ
 
    if ($resultado->num_rows > 0){
 
-       return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
+       return new JsonResponse(createErrorMessage("Produto já cadastrado!"), 409);
 
    }
 else {
@@ -127,7 +126,7 @@ $app->put('/produto/{id}', function(Request $request,$id) use ($conexao){
 
     if ($resultado->num_rows == 0){
 
-        return new JsonResponse(createErrorMessage("Não foi possível alterar o produto!"), 400);
+        return new JsonResponse(createErrorMessage("Produto com id {$id} não encontrado para alteração!"), 404);
     }
     else {
         $alterando = "update produto set nome = '{$nome}', valor = {$valor}, descricao = '{$descricao}', tipo = '{$tipo}' where id = {$id}";
@@ -193,22 +192,27 @@ $app->post('/vendedor', function (\Symfony\Component\HttpFoundation\Request $req
     $cpfValidacao = v::cpf()->notEmpty()->validate($vendedor['cpf']);
 
     if (!$cpfValidacao){
-        return new JsonResponse(createErrorMessage("CPF Invalido"), 400);
+        return new JsonResponse(createErrorMessage("CPF Inválido!"), 400);
     }
 
     $nome      = $vendedor['nome'];
     $cpf       = $vendedor['cpf'];
 
-    $query = "select cpf from vendedor where cpf='{$cpf}')";
+    $query = "select cpf from vendedor where cpf='{$cpf}'";
     $resultado = mysqli_query($conexao,$query);
 
     if ($resultado->num_rows > 0){
-        return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
-    }
-    $inserindo = "Insert into  vendedor (nome,cpf) values ('{$nome}','{$cpf}')";
-    $result = mysqli_query($conexao,$inserindo);
 
-    return new JsonResponse($vendedor,200);
+        return new JsonResponse(createErrorMessage("Vendedor já cadastrado!"), 409);
+
+    }
+    else {
+
+        $inserindo = "Insert into  vendedor (nome,cpf) values ('{$nome}','{$cpf}')";
+        $result = mysqli_query($conexao, $inserindo);
+
+        return new JsonResponse($vendedor, 200);
+    }
 
 });
 
@@ -231,7 +235,7 @@ $app->put('/vendedor/{id}', function(Request $request,$id) use ($conexao){
     $cpfValidacao = v::cpf()->notEmpty()->validate($vendedor['cpf']);
 
     if (!$cpfValidacao){
-        return new JsonResponse(createErrorMessage("CPF Inválido ou nulo!"), 400);
+        return new JsonResponse(createErrorMessage("CPF Inválido!"), 400);
     }
 
     $nome      = $vendedor['nome'];
@@ -241,14 +245,14 @@ $app->put('/vendedor/{id}', function(Request $request,$id) use ($conexao){
     $resultado  = mysqli_query($conexao,$query);
 
     if ($resultado->num_rows == 0){
-        return new JsonResponse(createErrorMessage("Não foi possível alterar o vendedor!"), 400);
+        return new JsonResponse(createErrorMessage("Vendedor com id {$id} não encontrado para alteração!"), 404);
     }
-
+    else {
     $alterando = "update vendedor set nome = '{$nome}', cpf = '{$cpf}' where id = {$id}";
-    $result  = mysqli_query($conexao,$alterando);
+    $result = mysqli_query($conexao, $alterando);
 
-    return new JsonResponse($vendedor,200);
-
+    return new JsonResponse($vendedor, 200);
+    }
 })->assert('id','\d+');
 
 
@@ -259,10 +263,11 @@ $app->delete('/vendedor/{id}', function ($id) use ($conexao){
     if($resultado->num_rows == 0) {
         return new JsonResponse(createErrorMessage("Vendedor com id {$id} não encontrado para exclusão!"), 404);
     }
-    $result = mysqli_query($conexao,"delete from vendedor where id = {$id}");
+    else {
+        $result = mysqli_query($conexao, "delete from vendedor where id = {$id}");
 
-    return new JsonResponse(["aviso" => "Vendedor excluído com sucesso!"], 200);
-
+        return new JsonResponse(["mensagem" => "Vendedor excluído com sucesso!"], 200);
+    }
 })->assert('id', '\d+');
 
 
@@ -332,7 +337,7 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
     };
 
     if(filter_var($venda['total'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
-        return new JsonResponse(createErrorMessage("O total não pode ser null!"), 400);
+        return new JsonResponse(createErrorMessage("O total não pode ser vazio!"), 400);
     }
 
     if (is_bool($venda['status'])) {
@@ -364,9 +369,9 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
     if ($resultado){
         return new JsonResponse($venda,200);
     }
-
+    else {
     return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
-
+}
 });
 
 $app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
@@ -378,7 +383,7 @@ $app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
     };
 
     if(filter_var($venda['total'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
-        return new JsonResponse(createErrorMessage("O total não pode ser null!"), 400);
+        return new JsonResponse(createErrorMessage("O total não pode ser vazio!"), 400);
     }
 
     if (is_int($venda['data_venda'])) {
@@ -399,7 +404,7 @@ $app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
     $resultado  = mysqli_query($conexao,$query);
 
     if ($resultado->num_rows == 0){
-        return new JsonResponse(createErrorMessage("Não foi possível alterar a venda!"), 400);
+        return new JsonResponse(createErrorMessage("Venda com id {$id} não encontrada para alteração!"), 404);
     }
     else {
         $alterando = "update venda set total = {$total},id_vendedor= {$id_vendedor}, observacoes = '{$observacoes}', status = {$status}, data_venda = {$data_venda}  where id = {$id}";
@@ -420,7 +425,7 @@ $app->delete('/venda/{id}', function ($id) use ($conexao){
     else {
         $result = mysqli_query($conexao, "delete from venda where id = {$id}");
 
-        return new JsonResponse(["aviso" => "Venda excluída com sucesso!"], 200);
+        return new JsonResponse(["mensagem" => "Venda excluída com sucesso!"], 200);
     }
 })->assert('id', '\d+');
 
@@ -464,9 +469,9 @@ $app->post('/itensvendidos', function (\Symfony\Component\HttpFoundation\Request
     if ($resultado){
         return new JsonResponse($itensvendidos,200);
     }
-
-    return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
-
+    else {
+        return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
+    }
 });
 
 $app->put('/itensvendidos/{id}', function(Request $request,$id) use ($conexao){
@@ -485,7 +490,7 @@ $app->put('/itensvendidos/{id}', function(Request $request,$id) use ($conexao){
     $resultado  = mysqli_query($conexao,$query);
 
     if ($resultado->num_rows == 0){
-        return new JsonResponse(createErrorMessage("Não foi possível alterar o item vendido!"), 400);
+        return new JsonResponse(createErrorMessage("Item vendido com id {$id} não encontrado para alteração!"), 404);
     }
     else {
         $alterando = "update itens_vendidos set id_produto = {$id_produto},id_venda= {$id_venda}, quantidade = {$quantidade} where id = {$id}";
@@ -507,7 +512,7 @@ $app->delete('/itensvendidos/{id}', function ($id) use ($conexao){
     else {
         $result = mysqli_query($conexao, "delete from itens_vendidos where id = {$id}");
 
-        return new JsonResponse(["aviso" => "Item vendido excluído com sucesso!"], 200);
+        return new JsonResponse(["mensagem" => "Item vendido excluído com sucesso!"], 200);
     }
 })->assert('id', '\d+');
 
