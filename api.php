@@ -282,42 +282,46 @@ $app->get('/venda', function () use ($conexao){
     $resultado  = mysqli_query($conexao,"select * from venda");
 
     while ($venda = mysqli_fetch_assoc($resultado)){
+        $venda['status'] = filter_var($venda['status'], FILTER_VALIDATE_BOOLEAN);
         array_push($ven, $venda);
     }
 
     if ($resultado){
         return new JsonResponse($ven,200);
     }
-    else {
 
+    else {
         return new JsonResponse(createErrorMessage("Não há venda cadastrada!"), 400);
     }
 });
 
-$app->get('/venda/finalizada', function () use ($conexao){
+$app->get('/venda/pendente', function () use ($conexao){
     $ven = array();
 
     $resultado  = mysqli_query($conexao,"select * from venda where status = false");
 
     while ($venda = mysqli_fetch_assoc($resultado)){
+        $venda['status'] = filter_var($venda['status'], FILTER_VALIDATE_BOOLEAN);
         array_push($ven, $venda);
     }
 
     if ($resultado){
         return new JsonResponse($ven,200);
     }
+
     else {
 
     return new JsonResponse(createErrorMessage("Não há vendas finalizadas!"), 400);
 }
 });
 
-$app->get('/venda/pendente', function () use ($conexao){
+$app->get('/venda/finalizada', function () use ($conexao){
     $ven = array();
 
     $resultado  = mysqli_query($conexao,"select * from venda where status = true");
 
     while ($venda = mysqli_fetch_assoc($resultado)){
+        $venda['status'] = filter_var($venda['status'], FILTER_VALIDATE_BOOLEAN);
         array_push($ven, $venda);
     }
 
@@ -336,7 +340,7 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
 
     if($venda == NULL){
         return new JsonResponse(createErrorMessage("Erro"), 400);
-    };
+    }
 
     if(filter_var($venda['total'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
         return new JsonResponse(createErrorMessage("O total não pode ser vazio!"), 400);
@@ -356,10 +360,8 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
     $status      = $venda['status'];
     $data_venda  = $venda['data_venda'];
 
-
     $query = "Insert into venda (total,id_vendedor,observacoes,data_venda,status) values ({$total},{$id_vendedor}, '{$observacoes}',{$data_venda},{$status})";
     $resultado = mysqli_query($conexao,$query);
-
 
     if ($resultado){
 
@@ -368,6 +370,7 @@ $app->post('/venda', function (\Symfony\Component\HttpFoundation\Request $reques
 
         return new JsonResponse($venda,200);
     }
+
     else {
     return new JsonResponse(createErrorMessage("Não foi possivel realizar o cadastro!"), 400);
 }
@@ -379,7 +382,7 @@ $app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
 
     if($venda == NULL){
         return new JsonResponse(createErrorMessage("Erro"), 400);
-    };
+    }
 
     if(filter_var($venda['total'], FILTER_SANITIZE_NUMBER_FLOAT,FILTER_FLAG_ALLOW_FRACTION) <= 0 ){
         return new JsonResponse(createErrorMessage("O total não pode ser vazio!"), 400);
@@ -399,23 +402,50 @@ $app->put('/venda/{id}', function(Request $request,$id) use ($conexao){
     $status      = $venda['status'];
     $data_venda  = $venda['data_venda'];
 
+    $sec = strtotime($data_venda);
+    $data_venda = date("Y-m-d", $sec);
+
     $query = "select id from venda  where id = {$id}";
     $resultado  = mysqli_query($conexao,$query);
 
     if ($resultado->num_rows == 0){
-        $id = mysqli_insert_id($conexao);
-        $venda['id'] = $id;
-
         return new JsonResponse(createErrorMessage("Venda com id {$id} não encontrada para alteração!"), 404);
     }
     else {
-        $alterando = "update venda set total = {$total},id_vendedor= {$id_vendedor}, observacoes = '{$observacoes}', status = {$status}, data_venda = {$data_venda}  where id = {$id}";
-        $result = mysqli_query($conexao, $alterando);
+        $alterando = "update venda set total = {$total},id_vendedor= {$id_vendedor}, observacoes = '{$observacoes}', status = {$status},data_venda = '{$data_venda}'  where id = {$id}";
+        mysqli_query($conexao, $alterando);
 
         return new JsonResponse($venda, 200);
     }
 })->assert('id','\d+');
 
+$app->put('/status/{id}', function(Request $request,$id) use ($conexao){
+
+    $venda = json_decode($request->getContent(), true);
+
+    if($venda == NULL){
+        return new JsonResponse(createErrorMessage("Erro"), 400);
+    }
+
+    if (is_bool($venda['status'])) {
+        $venda['status'] = json_encode($venda['status']);
+    }
+
+    $status = $venda['status'];
+
+    $query = "select id from venda  where id = {$id}";
+    $resultado  = mysqli_query($conexao,$query);
+
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Venda com id {$id} não encontrada para alteração!"), 404);
+    }
+    else {
+        $alterando = "update venda set status = {$status} where id = {$id}";
+        mysqli_query($conexao, $alterando);
+
+        return new JsonResponse($venda, 200);
+    }
+})->assert('id','\d+');
 
 $app->delete('/venda/{id}', function ($id) use ($conexao){
 
@@ -432,25 +462,25 @@ $app->delete('/venda/{id}', function ($id) use ($conexao){
 })->assert('id', '\d+');
 
 
-
-
 //ITENS VENDIDOS
-$app->get('/itensvendidos', function () use ($conexao){
 
+$app->get('/itensvendidos/{id}', function ($id) use ($conexao){
     $itens = array();
-    $resultado  = mysqli_query($conexao,"select * from itens_vendidos");
 
-    while ($itensvendidos = mysqli_fetch_assoc($resultado)){
-        array_push($itens, $itensvendidos);
+    $resultado = mysqli_query($conexao, "select * from itens_vendidos where id_venda = {$id}");
+
+    if ($resultado->num_rows == 0){
+        return new JsonResponse(createErrorMessage("Item vendido com id {$id} não encontrado para alteração!"), 404);
     }
 
-    if ($resultado){
-        return new JsonResponse($itens,200);
+    else {
+            while ($itensvendidos = mysqli_fetch_assoc($resultado)) {
+                array_push($itens, $itensvendidos);
+            }
+
+        return new JsonResponse($itens, 200);
     }
-
-    return new JsonResponse(createErrorMessage("Não há itens vendidos cadastrados!"), 400);
-});
-
+})->assert('id', '\d+');
 
 $app->post('/itensvendidos', function (\Symfony\Component\HttpFoundation\Request $request) use ($conexao){
 
@@ -458,25 +488,22 @@ $app->post('/itensvendidos', function (\Symfony\Component\HttpFoundation\Request
 
     if($itensvendidos == NULL){
         return new JsonResponse(createErrorMessage("Erro"), 400);
-    };
+    }
 
     if (is_int($itensvendidos['quantidade'])) {
         $itensvendidos['quantidade'] = trim($itensvendidos['quantidade']);
     }
 
-    if(empty($itensvendidos['quantidade'])){
-        return new JsonResponse(createErrorMessage("Quantidade não pode ser branco!"), 400);
-    }
+    if (!empty($itensvendidos)){
 
-    $id_produto  = $itensvendidos['id_produto'];
-    $id_venda    = $itensvendidos['id_venda'];
-    $quantidade  = $itensvendidos['quantidade'];
+        for($i = 0; $i< sizeof($itensvendidos);$i++){
+            $id_produto  = $itensvendidos[$i]['produto']['id'];
+            $id_venda    = $itensvendidos[$i]['venda']['id'];
+            $quantidade  = $itensvendidos[$i]['quantidade'];
 
-
-    $query = "Insert into itens_vendidos (id_venda,id_produto,quantidade) values ({$id_venda},{$id_produto},{$quantidade})";
-    $resultado = mysqli_query($conexao,$query);
-
-    if ($resultado){
+            $query = "Insert into itens_vendidos (id_venda,id_produto, quantidade) values ($id_venda, $id_produto, $quantidade)";
+            mysqli_query($conexao,$query);
+        }
         return new JsonResponse($itensvendidos,200);
     }
     else {
@@ -490,14 +517,10 @@ $app->put('/itensvendidos/{id}', function(Request $request,$id) use ($conexao){
 
     if($itensvendidos == NULL){
         return new JsonResponse(createErrorMessage("Erro"), 400);
-    };
+    }
 
     if (is_int($itensvendidos['quantidade'])) {
         $itensvendidos['quantidade'] = trim($itensvendidos['quantidade']);
-    }
-
-    if(empty($itensvendidos['quantidade'])){
-        return new JsonResponse(createErrorMessage("Quantidade não pode ser branco!"), 400);
     }
 
     $id_produto  = $itensvendidos['id_produto'];
@@ -517,7 +540,6 @@ $app->put('/itensvendidos/{id}', function(Request $request,$id) use ($conexao){
         return new JsonResponse($itensvendidos, 200);
     }
 })->assert('id','\d+');
-
 
 $app->delete('/itensvendidos/{id}', function ($id) use ($conexao){
 

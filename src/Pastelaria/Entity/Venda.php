@@ -4,6 +4,7 @@ namespace Pastelaria\Entity;
 
 use Doctrine\DBAL\Types\DecimalType;
 use Doctrine\ORM\Mapping as ORM;
+use DoctrineExtensions\Query\Mysql\Date;
 
 /**
  * Venda
@@ -27,8 +28,8 @@ class Venda
     private $total;
 
     /**
-     * @var \DateTime
-     * @ORM\Column(type="datetime")
+     * @var Date
+     * @ORM\Column(type="date")
      */
     private $data_venda;
 
