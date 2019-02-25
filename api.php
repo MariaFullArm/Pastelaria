@@ -543,14 +543,14 @@ $app->put('/itensvendidos/{id}', function(Request $request,$id) use ($conexao){
 
 $app->delete('/itensvendidos/{id}', function ($id) use ($conexao){
 
-    $resultado = mysqli_query($conexao,"select id from itens_vendidos where id = {$id}");
+    $resultado = mysqli_query($conexao,"select id_venda from itens_vendidos where id_venda = {$id}");
 
     if ($resultado->num_rows == 0){
         return new JsonResponse(createErrorMessage("Item vendido com id {$id} não encontrado para exclusão!"), 404);
     }
 
     else {
-        $result = mysqli_query($conexao, "delete from itens_vendidos where id = {$id}");
+        $result = mysqli_query($conexao, "delete from itens_vendidos where id_venda = {$id}");
 
         return new JsonResponse(["mensagem" => "Item vendido excluído com sucesso!"], 200);
     }
